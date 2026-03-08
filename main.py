@@ -2,15 +2,40 @@ import streamlit as st
 import oracledb
 import os
 
-user = os.environ.get("DB_USER")
-password = os.environ.get("DB_PASSWORD")
-dsn = os.environ.get("DB_DSN")
-
-connection = oracledb.connect(
-    user=user,
-    password=password,
-    dsn=dsn
+conn = oracledb.connect(
+    user=os.environ["DB_USER"],
+    password=os.environ["DB_PASSWORD"],
+    dsn=os.environ["DB_DSN"]
 )
+
+cursor = conn.cursor()
+
+plsql = """
+DECLARE
+    v_dano_nevoa NUMBER := 10;
+BEGIN
+    FOR r IN (
+        SELECT id_heroi, hp_atual
+        FROM TB_HEROIS
+        WHERE status = 'ATIVO'
+    ) LOOP
+    
+        UPDATE TB_HEROIS
+        SET hp_atual = hp_atual - v_dano_nevoa
+        WHERE id_heroi = r.id_heroi;
+
+        UPDATE TB_HEROIS
+        SET status = 'CAIDO'
+        WHERE id_heroi = r.id_heroi
+        AND hp_atual - v_dano_nevoa <= 0;
+
+    END LOOP;
+
+END;
+"""
+
+cursor.execute(plsql)
+conn.commit()
 
 print("Conectado ao banco!")
 
@@ -24,7 +49,7 @@ class Hero:
         self.status = status
 
 def get_all_heroes():
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     cursor.execute("SELECT hero_id, name, player_class, hp, max_hp, status FROM heroes")
     heroes = []
     for row in cursor:

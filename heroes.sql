@@ -1,16 +1,21 @@
-CREATE TABLE TB_HEROIS (
-    hero_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR2(50),
-    classe VARCHAR2(20),
-    hp_atual NUMBER,
-    hp_max NUMBER,
-    status VARCHAR2(20) DEFAULT 'ATIVO'
-);
+DECLARE
+    v_dano_nevoa NUMBER := 10;
+BEGIN
+    FOR r IN (
+        SELECT id_heroi, hp_atual
+        FROM TB_HEROIS
+        WHERE status = 'ATIVO'
+    ) LOOP
+    
+        UPDATE TB_HEROIS
+        SET hp_atual = hp_atual - v_dano_nevoa
+        WHERE id_heroi = r.id_heroi;
 
-INSERT INTO TB_HEROIS (name, classe, hp_atual, hp_max) 
-VALUES ('Artorias', 'GUERREIRO', 100, 100);
-INSERT INTO TB_HEROIS (name, classe, hp_atual, hp_max) 
-VALUES ('Sif', 'LADRÃO', 80, 80);
-INSERT INTO TB_HEROIS (name, classe, hp_atual, hp_max) 
-VALUES ('Gwyn', 'MAGO', 60, 60);
-COMMIT;
+        UPDATE TB_HEROIS
+        SET status = 'CAIDO'
+        WHERE id_heroi = r.id_heroi
+        AND hp_atual - v_dano_nevoa <= 0;
+
+    END LOOP;
+
+END;
