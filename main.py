@@ -17,19 +17,19 @@ DECLARE
     v_dano_nevoa NUMBER := 10;
 BEGIN
     FOR r IN (
-        SELECT id_heroi, hp_atual
+        SELECT hero_id, hp
         FROM TB_HEROIS
         WHERE status = 'ATIVO'
     ) LOOP
     
         UPDATE TB_HEROIS
-        SET hp_atual = hp_atual - v_dano_nevoa
-        WHERE id_heroi = r.id_heroi;
+        SET hp = hp - v_dano_nevoa
+        WHERE hero_id = r.hero_id;
 
         UPDATE TB_HEROIS
         SET status = 'CAIDO'
-        WHERE id_heroi = r.id_heroi
-        AND hp_atual - v_dano_nevoa <= 0;
+        WHERE hero_id = r.hero_id
+        AND hp - v_dano_nevoa <= 0;
 
     END LOOP;
 END;
@@ -50,9 +50,9 @@ class Hero:
 def get_all_heroes():
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT id_heroi, nome, classe, hp_atual, hp_max, status
+        SELECT hero_id, name, player_class, hp, hp_max, status
         FROM TB_HEROIS
-        ORDER BY id_heroi
+        ORDER BY hero_id
     """)
 
     heroes = []
@@ -72,10 +72,10 @@ def process_turn():
 
 # -------- STREAMLIT UI --------
 
+st.set_page_config(layout="wide")
 st.title("SQLgard - RPG Engine")
 st.subheader("O Despertar do Kernel Ancestral")
 st.write("*Uma névoa venenosa drena a vida de todos os heróis...*")
-st.set_page_config(layout="wide")
 
 # botão
 if st.button("Próximo Turno"):
