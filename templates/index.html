@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQLgard RPG Engine</title>
+</head>
+<body>
+
+<h1>SQLgard - RPG Engine</h1>
+<p>Uma névoa venenosa drena a vida de todos os heróis...</p>
+
+<a href="/turn">
+<button>Próximo Turno</button>
+</a>
+
+<a href="/reset">
+<button>Restaurar Heróis</button>
+</a>
+
+<br><br>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>Nome</th>
+<th>Classe</th>
+<th>HP</th>
+<th>Status</th>
+</tr>
+
+{% for hero in heroes %}
+
+<tr>
+<td>{{hero.hero_id}}</td>
+<td>{{hero.name}}</td>
+<td>{{hero.player_class}}</td>
+<td>{{hero.hp}} / {{hero.max_hp}}</td>
+<td>{{hero.status}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>
