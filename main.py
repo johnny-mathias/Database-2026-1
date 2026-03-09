@@ -29,9 +29,17 @@ BEGIN
         UPDATE TB_HEROIS
         SET status = 'CAIDO'
         WHERE hero_id = r.hero_id
-        AND hp - v_dano_nevoa <= 0;
+        AND hp <= 0;
 
     END LOOP;
+END;
+"""
+
+plsql_reset = """
+BEGIN
+    UPDATE TB_HEROIS
+    SET hp = hp_max,
+        status = 'ATIVO';
 END;
 """
 
@@ -44,6 +52,10 @@ class Hero:
         self.hp = hp
         self.max_hp = max_hp
         self.status = status
+
+def reset_heroes():
+    cursor.execute(plsql_reset)
+    conn.commit()
 
 
 # buscar herois
@@ -77,10 +89,18 @@ st.title("SQLgard - RPG Engine")
 st.subheader("O Despertar do Kernel Ancestral")
 st.write("*Uma névoa venenosa drena a vida de todos os heróis...*")
 
-# botão
-if st.button("Próximo Turno"):
-    process_turn()
-    st.rerun()
+colA, colB = st.columns(2)
+
+with colA:
+    if st.button("Próximo Turno"):
+        process_turn()
+        st.rerun()
+
+with colB:
+    if st.button("Restaurar Heróis"):
+        st.success("Heróis restaurados!")
+        reset_heroes()
+        st.rerun()
 
 
 # tabela de herois
