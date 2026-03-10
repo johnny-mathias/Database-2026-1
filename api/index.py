@@ -1,8 +1,13 @@
-from flask import Flask, render_template, redirect, request
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 import oracledb
 import os
 
-app = Flask(__name__, template_folder="../templates")
+app = FastAPI()
+
+templates = Jinja2Templates(directory="templates")
+
 
 def get_connection():
     return oracledb.connect(
@@ -10,6 +15,7 @@ def get_connection():
         password=os.environ["DB_PASSWORD"],
         dsn=os.environ["DB_DSN"]
     )
+
 
 plsql = """
 DECLARE
@@ -54,7 +60,9 @@ class Hero:
 
 
 def get_all_heroes():
+    conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute("""
         SELECT hero_id, name, player_class, hp, hp_max, status
         FROM TB_HEROIS
@@ -66,28 +74,47 @@ def get_all_heroes():
     for row in cursor:
         heroes.append(Hero(*row))
 
+    cursor.close()
+    conn.close()
+
     return heroes
 
 
-@app.route("/")
-def index():
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
     heroes = get_all_heroes()
-    return render_template("index.html", heroes=heroes)
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "heroes": heroes}
+    )
 
 
-@app.route("/turn")
+@app.get("/turn")
 def next_turn():
+    conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute(plsql)
     conn.commit()
-    return redirect("/")
+
+    cursor.close()
+    conn.close()
+
+    return RedirectResponse("/", status_code=303)
 
 
-@app.route("/reset")
+@app.get("/reset")
 def reset():
+    conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute(plsql_reset)
     conn.commit()
-    return redirect("/")
+
+    cursor.close()
+    conn.close()
+
+    return RedirectResponse("/", status_code=303)
+
 
 handler = app
