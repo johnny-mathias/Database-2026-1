@@ -1,22 +1,14 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from flask import Flask, render_template, redirect, request
 import oracledb
 import os
-from mangum import Mangum
 
-app = FastAPI()
+app = Flask(__name__)
 
-templates = Jinja2Templates(directory="templates")
-
-
-def get_connection():
-    return oracledb.connect(
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-        dsn=os.environ["DB_DSN"]
-    )
-
+conn = oracledb.connect(
+    user=os.environ["DB_USER"],
+    password=os.environ["DB_PASSWORD"],
+    dsn=os.environ["DB_DSN"]
+)
 
 plsql = """
 DECLARE
@@ -61,9 +53,7 @@ class Hero:
 
 
 def get_all_heroes():
-    conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute("""
         SELECT hero_id, name, player_class, hp, hp_max, status
         FROM TB_HEROIS
@@ -75,47 +65,26 @@ def get_all_heroes():
     for row in cursor:
         heroes.append(Hero(*row))
 
-    cursor.close()
-    conn.close()
-
     return heroes
 
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+@app.route("/")
+def index():
     heroes = get_all_heroes()
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "heroes": heroes}
-    )
+    return render_template("index.html", heroes=heroes)
 
 
-@app.get("/turn")
+@app.route("/turn")
 def next_turn():
-    conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute(plsql)
     conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return RedirectResponse("/", status_code=303)
+    return redirect("/")
 
 
-@app.get("/reset")
+@app.route("/reset")
 def reset():
-    conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute(plsql_reset)
     conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return RedirectResponse("/", status_code=303)
-
-
-handler = Mangum(app)
+    return redirect("/")
