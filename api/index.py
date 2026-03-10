@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import oracledb
 import os
+from mangum import Mangum
 
 app = FastAPI()
 
@@ -117,4 +118,4 @@ def reset():
     return RedirectResponse("/", status_code=303)
 
 
-handler = app
+handler = Mangum(app)
