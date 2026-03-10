@@ -2,13 +2,14 @@ from flask import Flask, render_template, redirect, request
 import oracledb
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates")
 
-conn = oracledb.connect(
-    user=os.environ["DB_USER"],
-    password=os.environ["DB_PASSWORD"],
-    dsn=os.environ["DB_DSN"]
-)
+def get_connection():
+    return oracledb.connect(
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        dsn=os.environ["DB_DSN"]
+    )
 
 plsql = """
 DECLARE
@@ -88,3 +89,5 @@ def reset():
     cursor.execute(plsql_reset)
     conn.commit()
     return redirect("/")
+
+handler = app
