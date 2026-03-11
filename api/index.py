@@ -20,6 +20,9 @@ HTML = """
 <form action="/processar" method="post">
 <button type="submit">Proximo Turno</button>
 </form>
+<form action="/resetar" method="post">
+<button type="submit" style="background-color:red;color:white">Resetar Jogo</button>
+</form>
 
 <br>
 
@@ -106,6 +109,25 @@ BEGIN
 END;
 
 """)
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/")
+
+@app.route("/resetar", methods=["POST"])
+def resetar():
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+
+    UPDATE TB_HEROIS
+    SET hp_atual = hp_max,
+        status = 'ATIVO'
+
+    """)
 
     conn.commit()
     conn.close()
