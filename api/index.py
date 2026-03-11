@@ -11,7 +11,8 @@ def get_conn():
         dsn=os.environ["DB_DSN"]
     )
 
-HTML = """<!doctype html>
+HTML = """
+<!doctype html>
 <html>
   <head>
     <title>SQLgard - RPG Engine</title>
@@ -28,7 +29,7 @@ HTML = """<!doctype html>
         margin-bottom: 5px;
       }
 
-      button {
+      .next {
         background-color: #423ce7;
         color: white;
         border: none;
@@ -37,8 +38,21 @@ HTML = """<!doctype html>
         cursor: pointer;
       }
 
-      button:hover {
-        background-color: #c0392b;
+      .next:hover {
+        background-color: #2c28aa;
+      }
+
+      .reset {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .reset:hover {
+        background-color: #aa0000;
       }
 
       table {
@@ -68,7 +82,7 @@ HTML = """<!doctype html>
   </head>
 
   <body>
-    <div style="">
+    <div>
       <h1>SQLgard - RPG Engine</h1>
 
       <p>O Despertar do Kernel Ancestral</p>
@@ -84,10 +98,10 @@ HTML = """<!doctype html>
       "
     >
       <form action="/processar" method="post">
-        <button type="submit">Proximo Turno</button>
+        <button type="submit" class="next">Proximo Turno</button>
       </form>
       <form action="/resetar" method="post">
-        <button type="submit" style="background-color: red; color: white">
+        <button type="submit" class="reset">
           Resetar Jogo
         </button>
       </form>
