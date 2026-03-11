@@ -1,90 +1,116 @@
-from flask import Flask, render_template, redirect, request
+from flask import Flask, request, redirect, render_template_string
 import oracledb
 import os
 
 app = Flask(__name__)
 
-conn = oracledb.connect(
-    user=os.environ["DB_USER"],
-    password=os.environ["DB_PASSWORD"],
-    dsn=os.environ["DB_DSN"]
-)
+def get_conn():
+    return oracledb.connect(
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        dsn=os.environ["DB_DSN"]
+    )
 
-plsql = """
-DECLARE
-    v_dano_nevoa NUMBER := 10;
-BEGIN
-    FOR r IN (
-        SELECT hero_id, hp
-        FROM TB_HEROIS
-        WHERE status = 'ATIVO'
-    ) LOOP
+HTML = """
+<h1>SQLgard - RPG Engine</h1>
+<h3>O Despertar do Kernel Ancestral</h3>
 
-        UPDATE TB_HEROIS
-        SET hp = GREATEST(hp - v_dano_nevoa, 0)
-        WHERE hero_id = r.hero_id;
+<p><i>Uma nevoa venenosa drena a vida de todos os herois...</i></p>
 
-        UPDATE TB_HEROIS
-        SET status = 'CAIDO'
-        WHERE hero_id = r.hero_id
-        AND hp = 0;
+<form action="/processar" method="post">
+<button type="submit">Proximo Turno</button>
+</form>
 
-    END LOOP;
-END;
+<br>
+
+<table border="1" cellpadding="5">
+<tr>
+<th>ID</th>
+<th>Nome</th>
+<th>Classe</th>
+<th>HP</th>
+<th>Status</th>
+</tr>
+
+{% for h in herois %}
+<tr>
+<td>{{h[0]}}</td>
+<td>{{h[1]}}</td>
+<td>{{h[2]}}</td>
+<td>{{h[3]}}/{{h[4]}}</td>
+<td>{{h[5]}}</td>
+</tr>
+{% endfor %}
+
+</table>
 """
-
-plsql_reset = """
-BEGIN
-    UPDATE TB_HEROIS
-    SET hp = hp_max,
-        status = 'ATIVO';
-END;
-"""
-
-
-class Hero:
-    def __init__(self, hero_id, name, player_class, hp, max_hp, status):
-        self.hero_id = hero_id
-        self.name = name
-        self.player_class = player_class
-        self.hp = hp
-        self.max_hp = max_hp
-        self.status = status
-
-
-def get_all_heroes():
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT hero_id, name, player_class, hp, hp_max, status
-        FROM TB_HEROIS
-        ORDER BY hero_id
-    """)
-
-    heroes = []
-
-    for row in cursor:
-        heroes.append(Hero(*row))
-
-    return heroes
-
 
 @app.route("/")
 def index():
-    heroes = get_all_heroes()
-    return render_template("index.html", heroes=heroes)
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT id_heroi, nome, classe, hp_atual, hp_max, status
+    FROM TB_HEROIS
+    ORDER BY id_heroi
+    """)
+
+    herois = cur.fetchall()
+
+    conn.close()
+
+    return render_template_string(HTML, herois=herois)
 
 
-@app.route("/turn")
-def next_turn():
-    cursor = conn.cursor()
-    cursor.execute(plsql)
+@app.route("/processar", methods=["POST"])
+def processar():
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+
+DECLARE
+
+    v_dano_nevoa NUMBER := 10;
+
+    CURSOR c_herois IS
+        SELECT id_heroi, hp_atual, hp_max
+        FROM TB_HEROIS
+        WHERE status = 'ATIVO'
+        FOR UPDATE;
+
+    v_hp NUMBER;
+
+BEGIN
+
+    FOR r IN c_herois LOOP
+
+        v_hp := r.hp_atual - v_dano_nevoa;
+
+        IF v_hp <= 0 THEN
+            UPDATE TB_HEROIS
+            SET hp_atual = 0,
+                status = 'CAIDO'
+            WHERE id_heroi = r.id_heroi;
+        ELSE
+            UPDATE TB_HEROIS
+            SET hp_atual = v_hp
+            WHERE id_heroi = r.id_heroi;
+        END IF;
+
+    END LOOP;
+
+END;
+
+""")
+
     conn.commit()
+    conn.close()
+
     return redirect("/")
 
 
-@app.route("/reset")
-def reset():
-    cursor = conn.cursor()
-    cursor.execute(plsql_reset)
-    conn.commit()
-    return redirect("/")
+app = app
