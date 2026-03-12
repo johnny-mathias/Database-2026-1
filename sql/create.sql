@@ -1,0 +1,8 @@
+CREATE TABLE TB_HEROIS (
+    id_heroi NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nome VARCHAR2(50),
+    classe VARCHAR2(20),
+    hp_atual NUMBER,
+    hp_max NUMBER,
+    status VARCHAR2(20) DEFAULT 'ATIVO'
+);
